@@ -15,7 +15,8 @@ import com.example.beerorderer.R
 import com.example.beerorderer.data.Beer
 
 class OrderAdapter(
-    private val onRemoveClick: (Beer) -> Unit
+    private val onRemoveClick: (Beer) -> Unit,
+    private val priceConverter: ((String) -> String)? = null
 ) : ListAdapter<Beer, OrderAdapter.OrderViewHolder>(BeerDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OrderViewHolder {
@@ -37,7 +38,7 @@ class OrderAdapter(
 
         fun bind(beer: Beer) {
             beerNameTextView.text = beer.name
-            beerPriceTextView.text = beer.price
+            beerPriceTextView.text = priceConverter?.invoke(beer.price) ?: beer.price
             beerRatingTextView.text = itemView.context.getString(
                 R.string.beer_rating_format,
                 "%.2f".format(beer.rating.average),

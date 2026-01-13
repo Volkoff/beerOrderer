@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="currency_names">
+        <item>USD - $</item>
+        <item>EUR - €</item>
+        <item>CZK - Kč</item>
+    </string-array>
+
+    <string-array name="currency_values">
+        <item>USD</item>
+        <item>EUR</item>
+        <item>CZK</item>
+    </string-array>
+</resources>

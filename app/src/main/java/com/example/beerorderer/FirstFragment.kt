@@ -46,14 +46,17 @@ class FirstFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        beerAdapter = BeerAdapter { beer ->
-            viewModel.addToOrder(beer)
-            Snackbar.make(
-                binding.root,
-                "${beer.name} added to order!",
-                Snackbar.LENGTH_SHORT
-            ).show()
-        }
+        beerAdapter = BeerAdapter(
+            onOrderClick = { beer ->
+                viewModel.addToOrder(beer)
+                Snackbar.make(
+                    binding.root,
+                    "${beer.name} added to order!",
+                    Snackbar.LENGTH_SHORT
+                ).show()
+            },
+            priceConverter = { price -> viewModel.getConvertedPrice(price) }
+        )
 
         binding.beerRecyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
@@ -131,6 +134,11 @@ class FirstFragment : Fragment() {
             } else {
                 binding.errorTextView.visibility = View.GONE
             }
+        }
+
+        // Observe currency changes to refresh prices
+        viewModel.currentCurrency.observe(viewLifecycleOwner) {
+            beerAdapter.notifyDataSetChanged()
         }
     }
 

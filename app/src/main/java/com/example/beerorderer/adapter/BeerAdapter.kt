@@ -15,7 +15,8 @@ import com.example.beerorderer.R
 import com.example.beerorderer.data.Beer
 
 class BeerAdapter(
-    private val onOrderClick: (Beer) -> Unit
+    private val onOrderClick: (Beer) -> Unit,
+    private val priceConverter: ((String) -> String)? = null
 ) : ListAdapter<Beer, BeerAdapter.BeerViewHolder>(BeerDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BeerViewHolder {
@@ -37,7 +38,7 @@ class BeerAdapter(
 
         fun bind(beer: Beer) {
             beerNameTextView.text = beer.name
-            beerPriceTextView.text = beer.price
+            beerPriceTextView.text = priceConverter?.invoke(beer.price) ?: beer.price
             beerRatingTextView.text = "★ ${"%.2f".format(beer.rating.average)} (${beer.rating.reviews} reviews)"
 
             // Load image with Glide

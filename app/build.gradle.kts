@@ -66,5 +66,7 @@ dependencies {
     // Glide for image loading
     implementation(libs.glide)
     kapt(libs.glide.compiler)
-}
 
+    // Preferences
+    implementation(libs.androidx.preference.ktx)
+}

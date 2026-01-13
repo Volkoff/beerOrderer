@@ -43,14 +43,17 @@ class SecondFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        orderAdapter = OrderAdapter { beer ->
-            viewModel.removeFromOrder(beer)
-            Snackbar.make(
-                binding.root,
-                "${beer.name} removed from order!",
-                Snackbar.LENGTH_SHORT
-            ).show()
-        }
+        orderAdapter = OrderAdapter(
+            onRemoveClick = { beer ->
+                viewModel.removeFromOrder(beer)
+                Snackbar.make(
+                    binding.root,
+                    "${beer.name} removed from order!",
+                    Snackbar.LENGTH_SHORT
+                ).show()
+            },
+            priceConverter = { price -> viewModel.getConvertedPrice(price) }
+        )
 
         binding.ordersRecyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
@@ -77,6 +80,11 @@ class SecondFragment : Fragment() {
         // Observe total price
         viewModel.totalPrice.observe(viewLifecycleOwner) { totalPrice ->
             binding.totalPriceTextView.text = totalPrice
+        }
+
+        // Observe currency changes to refresh prices
+        viewModel.currentCurrency.observe(viewLifecycleOwner) {
+            orderAdapter.notifyDataSetChanged()
         }
 
         // Setup send order button

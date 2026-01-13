@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <androidx.preference.SwitchPreferenceCompat
+        android:key="pref_dark_mode"
+        android:title="Dark mode"
+        android:summary="Enable dark theme"
+        android:defaultValue="false" />
+
+    <androidx.preference.ListPreference
+        android:key="pref_currency"
+        android:title="Currency"
+        android:dialogTitle="Select currency"
+        android:entries="@array/currency_names"
+        android:entryValues="@array/currency_values"
+        android:defaultValue="USD" />
+
+</PreferenceScreen>

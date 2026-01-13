@@ -1,14 +1,18 @@
 package com.example.beerorderer.viewmodel
 
 import android.app.Application
+import android.content.SharedPreferences
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import androidx.preference.PreferenceManager
 import com.example.beerorderer.data.Beer
+import com.example.beerorderer.data.Currency
 import com.example.beerorderer.data.OrderRepository
 import com.example.beerorderer.manager.OrderManager
 import com.example.beerorderer.repository.BeerRepository
+import com.example.beerorderer.repository.CurrencyRepository
 import kotlinx.coroutines.launch
 
 enum class SortOption {
@@ -26,10 +30,25 @@ enum class FilterOption {
 class BeerViewModel(application: Application) : AndroidViewModel(application) {
     private val beerRepository = BeerRepository()
     private val orderRepository = OrderRepository(application.applicationContext)
+    private val currencyRepository = CurrencyRepository()
 
     private var allBeers: List<Beer> = emptyList()
     private var currentSort = SortOption.NONE
     private var currentFilter = FilterOption.ALL
+    private var exchangeRates: Map<String, Double> = emptyMap()
+
+    private val prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(application)
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == "pref_currency") {
+            val value = prefs.getString(key, "USD") ?: "USD"
+            val currency = when (value) {
+                "EUR" -> Currency.EUR
+                "CZK" -> Currency.CZK
+                else -> Currency.USD
+            }
+            setCurrency(currency)
+        }
+    }
 
     private val _beers = MutableLiveData<List<Beer>>()
     val beers: LiveData<List<Beer>> = _beers
@@ -49,9 +68,26 @@ class BeerViewModel(application: Application) : AndroidViewModel(application) {
     private val _totalPrice = MutableLiveData<String>("$0.00")
     val totalPrice: LiveData<String> = _totalPrice
 
+    private val _currentCurrency = MutableLiveData<Currency>(Currency.USD)
+    val currentCurrency: LiveData<Currency> = _currentCurrency
+
     init {
+        // Load saved currency preference
+        val savedCurrency = prefs.getString("pref_currency", "USD") ?: "USD"
+        _currentCurrency.value = when (savedCurrency) {
+            "EUR" -> Currency.EUR
+            "CZK" -> Currency.CZK
+            else -> Currency.USD
+        }
+
+        // Register preference listener
+        prefs.registerOnSharedPreferenceChangeListener(prefListener)
+
         // Load saved orders on initialization
         loadSavedOrders()
+
+        // Load exchange rates
+        loadExchangeRates()
 
         // Listen for order changes to auto-save
         OrderManager.setOnOrderChangedListener {
@@ -206,13 +242,56 @@ class BeerViewModel(application: Application) : AndroidViewModel(application) {
     private fun updateOrders() {
         _orders.value = OrderManager.orders
         _orderCount.value = OrderManager.getOrderCount()
-        _totalPrice.value = "${"%.2f".format(OrderManager.getTotalPrice())}"
+        val totalInUSD = OrderManager.getTotalPrice()
+        val currency = _currentCurrency.value ?: Currency.USD
+        val convertedTotal = currencyRepository.convertPrice(totalInUSD, currency, exchangeRates)
+        _totalPrice.value = currencyRepository.formatPrice(convertedTotal, currency)
+    }
+
+    /**
+     * Load exchange rates from API
+     */
+    private fun loadExchangeRates() {
+        viewModelScope.launch {
+            val result = currencyRepository.getExchangeRates()
+            result.onSuccess { rates ->
+                exchangeRates = rates
+                // Update displayed prices
+                updateOrders()
+            }.onFailure {
+                // Use default rates if API fails
+                exchangeRates = mapOf(
+                    "USD" to 1.0,
+                    "EUR" to 0.92,
+                    "CZK" to 23.5
+                )
+                updateOrders()
+            }
+        }
+    }
+
+    /**
+     * Change display currency
+     */
+    fun setCurrency(currency: Currency) {
+        _currentCurrency.value = currency
+        updateOrders()
+    }
+
+    /**
+     * Get converted price for a beer
+     */
+    fun getConvertedPrice(priceString: String): String {
+        val priceInUSD = priceString.replace("$", "").toDoubleOrNull() ?: 0.0
+        val currency = _currentCurrency.value ?: Currency.USD
+        val convertedPrice = currencyRepository.convertPrice(priceInUSD, currency, exchangeRates)
+        return currencyRepository.formatPrice(convertedPrice, currency)
     }
 
     override fun onCleared() {
         super.onCleared()
         // Remove listener when ViewModel is cleared
         OrderManager.removeOnOrderChangedListener()
+        prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
     }
 }
-

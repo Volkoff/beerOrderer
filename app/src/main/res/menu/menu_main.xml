@@ -2,6 +2,29 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.example.beerorderer.MainActivity">
+
+    <item
+        android:id="@+id/action_currency"
+        android:icon="@drawable/ic_currency"
+        android:title="Currency"
+        app:showAsAction="always">
+        <menu>
+            <item
+                android:id="@+id/currency_usd"
+                android:title="$ USD"
+                android:checkable="true"
+                android:checked="true" />
+            <item
+                android:id="@+id/currency_eur"
+                android:title="€ EUR"
+                android:checkable="true" />
+            <item
+                android:id="@+id/currency_czk"
+                android:title="Kč CZK"
+                android:checkable="true" />
+        </menu>
+    </item>
+
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"
